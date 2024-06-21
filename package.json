@@ -25,6 +25,7 @@
     "jsonwebtoken": "^9.0.2",
     "luxon": "^3.4.4",
     "mongoose": "^8.1.0",
+    "multer": "^1.4.5-lts.1",
     "node-cron": "^3.0.3",
     "node-telegram-bot-api": "^0.64.0",
     "nodemon": "^3.0.3",

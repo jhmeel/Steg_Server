@@ -1,6 +1,9 @@
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const app = express();
 const server = http.createServer(app);
@@ -13,16 +16,43 @@ const io = new Server(server, {
 
 const activeUsers = new Map();
 
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+// Setup Multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+const upload = multer({ storage });
+
+// Serve uploaded files
+app.use('/uploads', express.static(uploadDir));
+
+// Endpoint to handle file uploads
+app.post('/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  }
+  const fileUrl = `/uploads/${req.file.filename}`;
+  res.send({ fileUrl });
+});
+
 io.on('connection', (socket) => {
   console.log('A user connected');
 
   socket.emit('messages', [...activeUsers.values()]);
 
   socket.on('join', (username) => {
-
     const existingUser = [...activeUsers.values()].find((user) => user === username);
     if (existingUser) {
-   
       socket.emit('error', 'Username already taken');
       return;
     }
